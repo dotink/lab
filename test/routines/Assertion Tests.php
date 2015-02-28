@@ -10,9 +10,10 @@
 		// not so bad for testing.
 		//
 
-		'setup' => function($data) {
+		'setup' => function($data, $shared) {
 
-			
+			$shared->coverageEngine->preserveFile($data['root'] . '/src/Assertion.php');
+
 			//
 			// A stupid calculator class
 			//

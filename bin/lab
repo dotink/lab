@@ -5,6 +5,8 @@
 	use InvalidArgumentException;
 	use stdClass;
 
+	const LAB = __FILE__;
+
 	//
 	// Useful shorthand constants
 	//
@@ -310,6 +312,19 @@
 		try {
 			needs(__DIR__ . '/../src/Assertion.php');
 			needs(__DIR__ . '/../src/Rejection.php');
+			needs(__DIR__ . '/../src/Coverage/Engine.php');
+
+	        $autoloaders = [
+	                __DIR__ . '/../../../autoload.php',
+	                __DIR__ . '/../vendor/autoload.php',
+	                __DIR__ . '/vendor/autoload.php'
+	        ];
+
+	        foreach ($autoloaders as $autoloader) {
+	                if (file_exists($autoloader)) {
+	                        include $autoloader;
+	                }
+	        }
 
 		} catch (Exception $e) {
 			echo _('Broken install: ', 'red') . $e->getMessage();
@@ -346,15 +361,6 @@
 			? realpath($directory . DS . $config['tests_directory'])
 			: realpath($config['tests_directory']);
 
-		if (!empty($config['disable_autoloading'])) {
-			spl_autoload_register(function($class) {
-				throw new Exception(sprintf(
-					'Cannot autoload class %s, autoloading disabled, try needs() or using a mock',
-					$class
-				));
-			});
-		}
-
 		if (!isset($argv[2])) {
 			if ($tests_directory) {
 				foreach (add_tests($tests_directory) as $test_file) {
@@ -380,9 +386,10 @@
 			exit(0);
 		}
 
-		$data      = $config['data'];
-		$shared    = new stdClass();
-		$file_path = str_replace($tests_directory . DS, '', $argv[2]);
+		$data         = $config['data'];
+		$shared       = new stdClass();
+		$file_path    = str_replace($tests_directory . DS, '', $argv[2]);
+		$data['test'] = $argv[2];
 
 		try {
 			$test_file = needs($argv[2]);
@@ -399,11 +406,11 @@
 
 		try {
 			if (isset($config['setup']) && $config['setup'] instanceof \Closure) {
-				call_user_func($config['setup'], $config['data'], $shared);
+				call_user_func($config['setup'], $data, $shared);
 			}
 
 			if (isset($test_file['setup']) && $test_file['setup'] instanceof \Closure) {
-				call_user_func($test_file['setup'], $config['data'], $shared);
+				call_user_func($test_file['setup'], $data, $shared);
 			}
 
 		} catch (Exception $e) {
@@ -415,6 +422,15 @@
 		//
 		// Run Tests
 		//
+
+		if (!empty($config['disable_autoloading'])) {
+			spl_autoload_register($disable_autoloader = function($class) {
+				throw new Exception(sprintf(
+					'Cannot autoload class %s, autoloading disabled, try needs() or using a mock',
+					$class
+				));
+			}, TRUE, TRUE);
+		}
 
 		$failed = FALSE;
 
@@ -457,17 +473,21 @@
 			}
 		}
 
+		if (!empty($config['disable_autoloading'])) {
+			spl_autoload_unregister($disable_autoloader);
+		}
+
 		//
 		// Cleanup
 		//
 
 		try {
 			if (isset($test_file['cleanup']) && $test_file['cleanup'] instanceof \Closure) {
-				call_user_func($test_file['cleanup'], $config['data'], $shared);
+				call_user_func($test_file['cleanup'], $data, $shared);
 			}
 
 			if (isset($config['cleanup']) && $config['cleanup'] instanceof \Closure) {
-				call_user_func($config['cleanup'], $config['data'], $shared);
+				call_user_func($config['cleanup'], $data, $shared);
 			}
 
 		} catch (Exception $e) {

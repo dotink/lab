@@ -312,19 +312,18 @@
 		try {
 			needs(__DIR__ . '/../src/Assertion.php');
 			needs(__DIR__ . '/../src/Rejection.php');
-			needs(__DIR__ . '/../src/Coverage/Engine.php');
 
-	        $autoloaders = [
-	                __DIR__ . '/../../../autoload.php',
-	                __DIR__ . '/../vendor/autoload.php',
-	                __DIR__ . '/vendor/autoload.php'
-	        ];
-
-	        foreach ($autoloaders as $autoloader) {
-	                if (file_exists($autoloader)) {
-	                        include $autoloader;
-	                }
-	        }
+		        $autoloaders = [
+		                __DIR__ . '/../../../autoload.php',
+		                __DIR__ . '/../vendor/autoload.php',
+		                __DIR__ . '/vendor/autoload.php'
+		        ];
+	
+		        foreach ($autoloaders as $autoloader) {
+		                if (file_exists($autoloader)) {
+		                        include $autoloader;
+		                }
+		        }
 
 		} catch (Exception $e) {
 			echo _('Broken install: ', 'red') . $e->getMessage();

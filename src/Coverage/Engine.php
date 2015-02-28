@@ -156,17 +156,14 @@
 		 */
 		public function processCoverageData($file)
 		{
-			if (in_array($file, $this->preservedFiles)) {
-				return;
-			}
-
 			if (in_array($file, $this->ignoredFiles)) {
 				unset($this->coverageData[$file]);
 				return;
 			}
 
-			$file_reflection = $this->broker->processFile($file, TRUE);
-			$file_namespaces = $file_reflection->getNamespaces();
+			$this->preserving = in_array($file, $this->preservedFiles);
+			$file_reflection  = $this->broker->processFile($file, TRUE);
+			$file_namespaces  = $file_reflection->getNamespaces();
 
 			foreach ($file_namespaces as $namespace) {
 				if ($this->removeByPattern($file, $namespace, $this->ignoredNamespaces)) {
@@ -268,15 +265,17 @@
 		 */
 		private function removeByPattern($file, $reflection, $ignore_list)
 		{
-			foreach ($ignore_list as $pattern) {
-				$pattern = str_replace('\\', '\\\\', $pattern);
+			if (!$this->preserving) {
+				foreach ($ignore_list as $pattern) {
+					$pattern = str_replace('\\', '\\\\', $pattern);
 
-				if (!preg_match('#' . $pattern . '#i', $reflection->getName())) {
-					continue;
+					if (!preg_match('#' . $pattern . '#i', $reflection->getName())) {
+						continue;
+					}
+
+					$this->remove($file, $reflection->getStartLine(), $reflection->getEndLine());
+					return TRUE;
 				}
-
-				$this->remove($file, $reflection->getStartLine(), $reflection->getEndLine());
-				return TRUE;
 			}
 
 			return FALSE;

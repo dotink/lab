@@ -5,7 +5,7 @@ etc.  It is simple to use and very direct.  It works well with
 [Parody](http://www.github.com/dotink/parody) to provide much of the same testing capacity as more
 complex frameworks with a sweeter API and overall simpler approach.
 
-[![Build Status](https://travis-ci.org/dotink/Lab.png?branch=master)](https://travis-ci.org/dotink/Lab)
+[![Build Status](https://travis-ci.org/dotink/lab.svg?branch=master)](https://travis-ci.org/dotink/lab)
 
 ## Installation
 

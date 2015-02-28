@@ -90,9 +90,11 @@
 		 */
 		public function start(ReportInterface $report)
 		{
-			$this->started = TRUE;
-			$this->report  = $report;
-			xdebug_start_code_coverage(XDEBUG_CC_UNUSED | XDEBUG_CC_DEAD_CODE);
+			if (function_exists('xdebug_start_code_coverage')) {
+				$this->started = TRUE;
+				$this->report  = $report;
+				xdebug_start_code_coverage(XDEBUG_CC_UNUSED | XDEBUG_CC_DEAD_CODE);
+			}
 		}
 
 
@@ -209,6 +211,10 @@
 		 */
 		public function stop(OutputterInterface $outputter = NULL)
 		{
+			if (!$this->isStarted()) {
+				return;
+			}
+
 			$this->coverageData = xdebug_get_code_coverage();
 			$this->broker       = new Broker(new Broker\Backend\Memory());
 

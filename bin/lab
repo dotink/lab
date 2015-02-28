@@ -514,14 +514,17 @@
 			exit(-2);
 		}
 
+		$shared->timer->stop();
+
+		$time = $shared->timer->getTime();
+		$mem  = memory_get_usage() / 1024 / 1024;
+
 		if ($shared->coverageEngine->isStarted()) {
 			$shared->coverageEngine->stop();
 		}
 
-		$shared->timer->stop();
-
-		echo LB . TAB . 'Time:   ' . $shared->timer->getTime();
-		echo LB . TAB . 'Memory: ' . number_format(memory_get_usage() / 1024 / 1024, 2) . 'mb';
+		echo LB . TAB . 'Time:   ' . $time;
+		echo LB . TAB . 'Memory: ' . number_format($mem, 2) . 'mb';
 		echo LB;
 
 		exit($failed ? -1 : 0);

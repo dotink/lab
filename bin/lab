@@ -55,11 +55,11 @@
 
 	if (!isset($argv[2])) {
 		$banner = (
-			' _        _    ____          _   ___  ' . LB .
-			'| |      / \  | __ )  __   _/ | / _ \ ' . LB .
-			'| |     / _ \ |  _ \  \ \ / / || | | |' . LB .
-			'| |___ / ___ \| |_) |  \ V /| || |_| |' . LB .
-			'|_____/_/   \_\____/    \_/ |_(_)___/  By: Dotink'
+			' _        _    ____          _   _  ' . LB .
+			'| |      / \  | __ )  __   _/ | / |' . LB .
+			'| |     / _ \ |  _ \  \ \ / / | | |' . LB .
+			'| |___ / ___ \| |_) |  \ V /| | | |' . LB .
+			'|_____/_/   \_\____/    \_/ |_( )_|  By: Dotink'
 		);
 
 		echo LB;
@@ -318,7 +318,7 @@
 		                __DIR__ . '/../vendor/autoload.php',
 		                __DIR__ . '/vendor/autoload.php'
 		        ];
-	
+
 		        foreach ($autoloaders as $autoloader) {
 		                if (file_exists($autoloader)) {
 		                        include $autoloader;
@@ -397,7 +397,22 @@
 			exit(-1);
 		}
 
-		echo _(sprintf('Running %s', str_replace('.php', '', $file_path)), 'blue') . LB;
+		$shared->timer          = new Utilities\Timer();
+		$shared->coverageEngine = new Coverage\Engine();
+		$shared->coverageReport = new Coverage\Report($data['root']);
+
+		$shared->coverageEngine->ignoreFile(LAB);
+		$shared->coverageEngine->ignoreFile(__FILE__);
+		$shared->coverageEngine->ignoreFile($data['test']);
+		$shared->coverageEngine->ignoreNamespace('Dotink\Lab(\(.*))?');
+
+		$shared->coverageEngine->ignoreClass('Composer(.*)');
+		$shared->coverageEngine->ignoreFunction('Composer(.*)');
+		$shared->coverageEngine->ignoreNamespace('Composer(\(.*))?');
+
+		$shared->timer->start();
+
+		echo LB . _(sprintf('Running %s', str_replace('.php', '', $file_path)), 'blue') . LB;
 
 		//
 		// Setup
@@ -418,6 +433,10 @@
 			exit(-1);
 		}
 
+		if (!isset($config['disable_code_coverage']) || !$config['disable_code_coverage']) {
+			$shared->coverageEngine->start($shared->coverageReport);
+		}
+
 		//
 		// Run Tests
 		//
@@ -436,17 +455,17 @@
 		if (isset($test_file['tests']) && is_array($test_file['tests'])) {
 			foreach ($test_file['tests'] as $message => $test) {
 				if ($test instanceof \Closure) {
-					echo TAB . '- ' . $message . ' ';
+					echo TAB;
 
 					try {
 						call_user_func($test, $data, $shared);
-						echo '[' . _('PASS', 'green') . ']' . LB;
+						echo '[' . _('    PASS    ', 'green') . '] - ' . $message . LB;
 
 					} catch (Exception $e) {
 						if (get_class($e) == 'InvalidArgumentException') {
-							echo '[' . _('INVALID TEST', 'yellow') . ']' . LB;
+							echo '[' . _('INVALID TEST', 'yellow') . '] - ' . $message . LB;
 						} else {
-							echo '[' . _('FAIL', 'red') . ']' . LB;
+							echo '[' . _('    FAIL    ', 'red') . '] - ' . $message . LB;
 						}
 
 						echo TAB . LB;
@@ -494,6 +513,16 @@
 			echo $e->getMessage();
 			exit(-2);
 		}
+
+		if ($shared->coverageEngine->isStarted()) {
+			$shared->coverageEngine->stop();
+		}
+
+		$shared->timer->stop();
+
+		echo LB . TAB . 'Time:   ' . $shared->timer->getTime();
+		echo LB . TAB . 'Memory: ' . number_format(memory_get_usage() / 1024 / 1024, 2) . 'mb';
+		echo LB;
 
 		exit($failed ? -1 : 0);
 	});

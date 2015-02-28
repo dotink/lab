@@ -4,26 +4,95 @@
 
 	class Engine
 	{
+		/**
+		 * The reflection analysis broker
+		 *
+		 * @access private
+		 * @var array
+		 */
 		private $broker = NULL;
-		private $fileReflections = array();
+
+
+		/**
+		 * Classes which are being ignored
+		 *
+		 * @access private
+		 * @var array
+		 */
 		private $ignoredClasses = array();
+
+
+		/**
+		 * Functions which are being ignored
+		 *
+		 * @access private
+		 * @var array
+		 */
 		private $ignoredFunctions = array();
+
+
+		/**
+		 * Files which are being ignored
+		 *
+		 * @access private
+		 * @var array
+		 */
 		private $ignoredFiles = array();
-		private $ignoredNamespaces = array();
-		private $preservedFiles = array();
 
-
-		public function __construct(ReportInterface $report)
-		{
-			$this->report = $report;
-		}
 
 		/**
 		 *
 		 */
+		private $ignoredMethods = array();
+
+
+		/**
+		 * Namespaces which are being ignored
+		 *
+		 * @access private
+		 * @var array
+		 */
+		private $ignoredNamespaces = array();
+
+
+		/**
+		 * Files which are being preserved from ignore
+		 *
+		 * @access private
+		 * @var array
+		 */
+		private $preservedFiles = array();
+
+
+		/**
+		 *
+		 */
+		private $started = FALSE;
+
+
+		/**
+		 * Create a new coverage engine
+		 *
+		 * @access public
+		 * @return void
+		 */
+		public function __construct()
+		{
+		}
+
+
+		/**
+		 * Begin code coverage checks
+		 *
+		 * @access public
+		 * @param ReportInterface $report The report to add information to
+		 * @return void
+		 */
 		public function start(ReportInterface $report)
 		{
-			xdebug_start_code_coverage(XDEBUG_CC_UNUSED);
+			$this->started = TRUE;
+			$this->report  = $report;
+			xdebug_start_code_coverage(XDEBUG_CC_UNUSED | XDEBUG_CC_DEAD_CODE);
 		}
 
 
@@ -66,6 +135,14 @@
 		/**
 		 *
 		 */
+		public function isStarted()
+		{
+			return $this->started;
+		}
+
+		/**
+		 *
+		 */
 		public function preserveFile($file)
 		{
 			$this->preservedFiles[] = realpath($file);
@@ -90,40 +167,35 @@
 			$file_namespaces = $file_reflection->getNamespaces();
 
 			foreach ($file_namespaces as $namespace) {
-				foreach ($this->ignoredNamespaces as $pattern) {
-					$pattern = str_replace('\\', '\\\\', $pattern);
-					if (!preg_match('#' . $pattern . '#i', $namespace->getName())) {
-						continue;
-					}
-
-					$this->remove($file, $namespace->getStartLine(), $namespace->getEndLine());
-					break 2;
+				if ($this->removeByPattern($file, $namespace, $this->ignoredNamespaces)) {
+					break;
 				}
 
+				$this->report->addNamespace($namespace);
+
 				foreach ($namespace->getClasses() as $class) {
-					foreach ($this->ignoredClasses as $pattern) {
-						$pattern = str_replace('\\', '\\\\', $pattern);
-						if (!preg_match('#' . $pattern . '#i', $class->getName())) {
-							continue;
+					if ($this->removeByPattern($file, $class, $this->ignoredClasses)) {
+						break;
+					}
+
+					$this->report->addClass($class);
+
+					foreach ($class->getMethods() as $method) {
+						if ($this->removeByPattern($file, $method, $this->ignoredMethods)) {
+							break;
 						}
 
-						$this->remove($file, $class->getStartLine(), $class->getEndLine());
-						break;
+						$this->report->addMethod($method);
 					}
 				}
 
 				foreach ($namespace->getFunctions() as $function) {
-					foreach ($this->ignoredFunctions as $pattern) {
-						$pattern = str_replace('\\', '\\\\', $pattern);
-						if (!preg_match('#' . $pattern . '#i', $function->getName())) {
-							continue;
-						}
-
-						$this->remove($file, $function->getStartLine(), $function->getEndLine());
+					if ($this->removeByPattern($file, $function, $this->ignoredFunctions)) {
 						break;
 					}
-				}
 
+					$this->report->addFunction($file, $function);
+				}
 			}
 
 			if (!count($this->coverageData[$file])) {
@@ -144,21 +216,18 @@
 				$this->processCoverageData($file);
 			}
 
+			$this->report->generate($this->coverageData);
+
 			if ($this->coverageData) {
 
-				echo PHP_EOL . "\033[37mCode Coverage\033[0m" . PHP_EOL;
+				echo PHP_EOL . "\t\033[37mCode Coverage\033[0m" . PHP_EOL;
 
 				foreach (array_keys($this->coverageData) as $file) {
-					$data      = array_count_values($this->coverageData[$file]);
-					$covered   = $data['1'];
-					$uncovered = $data['-1'];
-					$coverage  = $covered / ($covered + $uncovered) * 100;
-
 					echo PHP_EOL . sprintf(
 						"\t" . '%s [ %s | %s ] (%s)',
-						str_pad(number_format($coverage, 2) . '%', 7),
-						str_pad($covered, 5),
-						str_pad($uncovered ?: '0', 5),
+						str_pad($this->report->checkFileCoverage($file) . '%', 7),
+						str_pad($this->report->checkFileCoverage($file, 'covered'), 5),
+						str_pad($this->report->checkFileCoverage($file, 'uncovered'), 5),
 						$this->report->cleanFile($file)
 					);
 				}
@@ -185,6 +254,26 @@
 			for ($x = $start; $x <= $end; $x++) {
 				unset($this->coverageData[$file][$x]);
 			}
+		}
+
+
+		/**
+		 *
+		 */
+		private function removeByPattern($file, $reflection, $ignore_list)
+		{
+			foreach ($ignore_list as $pattern) {
+				$pattern = str_replace('\\', '\\\\', $pattern);
+
+				if (!preg_match('#' . $pattern . '#i', $reflection->getName())) {
+					continue;
+				}
+
+				$this->remove($file, $reflection->getStartLine(), $reflection->getEndLine());
+				return TRUE;
+			}
+
+			return FALSE;
 		}
 	}
 }

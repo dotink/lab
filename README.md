@@ -1,13 +1,13 @@
 # Lab
 
 [![Join the chat at https://gitter.im/dotink/lab](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/dotink/lab?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://travis-ci.org/dotink/lab.svg?branch=master)](https://travis-ci.org/dotink/lab)
 
 Lab is a concise and direct testing framework that isolates testing contexts, class interaction,
 etc.  It is simple to use and very direct.  It works well with
 [Parody](http://www.github.com/dotink/parody) to provide much of the same testing capacity as more
 complex frameworks with a sweeter API and overall simpler approach.
 
-[![Build Status](https://travis-ci.org/dotink/lab.svg?branch=master)](https://travis-ci.org/dotink/lab)
 
 ## Installation
 

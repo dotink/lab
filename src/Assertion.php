@@ -1,7 +1,6 @@
 <?php namespace Dotink\Lab
 {
 	use Exception;
-	use InvalidArgumentException;
 	use Closure;
 
 	/**
@@ -260,8 +259,8 @@
 					break;
 
 				default:
-					throw new Exception(sprintf(
-						'Cannot assert type %s, not supported',
+					throw new InvalidTestException(sprintf(
+						'Cannot provide assertion or rejection for type %s, not supported',
 						$this->type
 					));
 			}
@@ -315,7 +314,7 @@
 				}
 
 				if (count($missing)) {
-					throw new Exception(sprintf(
+					throw new FailedTestException(sprintf(
 						'Assertion Failed: %d of the values could not be found in result %s',
 						count($missing),
 						$this->formatValue($result)
@@ -335,7 +334,7 @@
 					: strpos($result, $value);
 
 				if ($contains_value === FALSE) {
-					throw new Exception(sprintf(
+					throw new FailedTestException(sprintf(
 						'Assertion Failed: %s does not contain %s',
 						$this->formatValue($result),
 						$this->formatValue($value)
@@ -351,7 +350,7 @@
 				return $this;
 			}
 
-			throw new Exception(sprintf(
+			throw new InvalidTestException(sprintf(
 				'Cannot use %s() on assertion or rejection of type "%s"',
 				__FUNCTION__,
 				gettype($result)
@@ -389,7 +388,7 @@
 
 
 					if ($beginning != mb_substr($result, 0, $length)) {
-						throw new Exception(vsprintf(
+						throw new FailedTestException(vsprintf(
 							'Assertion Failed: Result %s does not begin with %s',
 							$alert_values
 						));
@@ -403,13 +402,13 @@
 					return $this;
 				}
 
-				throw new Exception(sprintf(
+				throw new FailedTestException(sprintf(
 					'Assertion Failed: Result %s is not long enough to begin with %s',
 					$alert_values
 				));
 			}
 
-			throw new InvalidArgumentException(sprintf(
+			throw new InvalidTestException(sprintf(
 				'Cannot use %s() on assertion or rejection of type "%s"',
 				__FUNCTION__,
 				gettype($result)
@@ -445,7 +444,7 @@
 
 				if ($length >= $start) {
 					if ($end != mb_substr($result, $length - $start)) {
-						throw new Exception(vsprintf(
+						throw new FailedTestException(vsprintf(
 							'Assertion Failed: Result %s does not end with %s',
 							$alert_values
 						));
@@ -459,13 +458,13 @@
 					return $this;
 				}
 
-				throw new Exception(vsprintf(
+				throw new FailedTestException(vsprintf(
 					'Assertion Failed: Result %s is not long enough to end with %s',
 					$alert_values
 				));
 			}
 
-			throw new InvalidArgumentException(sprintf(
+			throw new InvalidTestException(sprintf(
 				'Cannot use %s() on assertion or rejection of type "%s"',
 				__FUNCTION__,
 				gettype($result)
@@ -499,7 +498,7 @@
 				return $this;
 			}
 
-			throw new Exception(sprintf(
+			throw new FailedTestException(sprintf(
 				'Assertion Failed: Expected %s%s but got %s',
 				$this->formatValue($value),
 				$exactly ? ' (exactly)' : NULL,
@@ -525,8 +524,8 @@
 			if (is_array($result) || (is_object($result) && $result instanceof \ArrayAccess)) {
 				foreach ($keys as $key) {
 					if (!(is_string($key) || is_int($key))) {
-						throw new InvalidArgumentException(sprintf(
-							'Assertion Failed: Invalid key %s provided to has()',
+						throw new InvalidTestException(sprintf(
+							'Invalid key %s provided to has()',
 							$this->formatValue($key)
 						));
 					}
@@ -537,7 +536,7 @@
 				}
 
 				if ($num_missing = count($missing)) {
-					throw new Exception(sprintf(
+					throw new FailedTestException(sprintf(
 						'Assertion Failed: Value %s is missing %s out of %s keys',
 						$this->formatValue($result),
 						$num_missing,
@@ -554,7 +553,7 @@
 				return $this;
 			}
 
-			throw new InvalidArgumentException(sprintf(
+			throw new InvalidTestException(sprintf(
 				'Cannot use %s() on assertion or rejection of non-array-accessible type "%s"',
 				__FUNCTION__,
 				$this->formatType($result)
@@ -571,21 +570,21 @@
 			$result = $this->resolve();
 
 			if (!is_object($result)) {
-				throw new Exception(sprintf(
+				throw new FailedTestException(sprintf(
 					'Assertion Failed: Value %s is not an object',
 					$this->formatValue($result)
 				));
 			}
 
 			if ($modifier == EXACTLY && get_class($result) != ltrim($class, '\\')) {
-				throw new Exception(sprintf(
+				throw new FailedTestException(sprintf(
 					'Assertion Failed: Value has a class of %s, not %s',
 					get_class($result),
 					$class
 				));
 
 			} elseif (!($result instanceof $class))  {
-				throw new Exception(sprintf(
+				throw new FailedTestException(sprintf(
 					'Assertion Failed: Value is an instance of %s, not %s',
 					get_class($result),
 					$class
@@ -624,7 +623,7 @@
 			];
 
 			if (!self::compareReduced($result, $modifier, $value)) {
-				throw new Exception(vsprintf(
+				throw new FailedTestException(vsprintf(
 					'Assertion Failed: Value %s is not %s %s',
 					$alert_values
 				));
@@ -669,7 +668,7 @@
 			if (isset($length)) {
 
 				if (!self::compareReduced($length, $modifier, $size)) {
-					throw new Exception(sprintf(
+					throw new FailedTestException(sprintf(
 						'Assertion Failed: Value %s measures %d instead of %s%d',
 						$this->formatValue($result),
 						$length,
@@ -687,7 +686,7 @@
 				return $this;
 			}
 
-			throw new InvalidArgumentException(sprintf(
+			throw new InvalidTestException(sprintf(
 				'Cannot use %s() on non countable or sizeable assertion / rejection of type "%s"',
 				__FUNCTION__,
 				gettype($result)
@@ -713,7 +712,7 @@
 			}
 
 			if (!($this->isMethod || $this->isFunction || $this->isClosure)) {
-				throw new InvalidArgumentException(sprintf(
+				throw new InvalidTestException(sprintf(
 					'Cannot use non-callable value %s to assert or reject an exception is thrown',
 					$this->formatValue($this->value)
 				));
@@ -727,20 +726,27 @@
 				$exception_class = get_class($e);
 
 				if (in_array($exception_class, $classes)) {
+
+					$this->success = sprintf(
+						'Callable %s threw one of the exceptions in %s',
+						$this->formatCallable($this->value),
+                                        	$this->formatArray($classes)
+					);
+
 					return $this;
 
 				} else {
-					throw new Exception(sprintf(
+					throw new FailedTestException(sprintf(
 						'Assertion Failed: Callable %s threw "%s" instead of "%s" (%s)',
-						$this->value,
-						$exception_class,
-						$class,
+						$this->formatCallable($this->value),
+						$this->formatValue($exception_class),
+						$this->formatArray($classes),
 						$e->getMessage()
 					));
 				}
 			}
 
-			throw new Exception(sprintf(
+			throw new FailedTestException(sprintf(
 				'Assertion Failed: Callable %s returned %s instead of throwing one of %s',
 				$this->formatCallable($this->value),
 				$this->formatValue($result),
@@ -759,21 +765,21 @@
 		public function using($object)
 		{
 			if (!$this->needsObject) {
-				throw new Exception(sprintf(
-					'Cannot assert using() on static "%s"',
+				throw new InvalidTestException(sprintf(
+					'Cannot assert or reject `using()` object instance on static "%s"',
 					$this->value
 				));
 
 			} elseif (!is_object($object)) {
-				throw new Exception(sprintf(
-					'Cannot assert "%s" using() non-object %s',
+				throw new InvalidTestException(sprintf(
+					'Cannot assert or reject "%s" `using()` non-object %s',
 					$this->value,
 					$this->formatValue($object)
 				));
 
 			} elseif (!($object instanceof $this->class)) {
-				throw new Exception(sprintf(
-					'Cannot assert "%s" using() object of class "%s"',
+				throw new InvalidTestException(sprintf(
+					'Cannot assert or reject "%s" `using()` object of class "%s"',
 					$this->value,
 					$this->class
 				));
@@ -796,8 +802,8 @@
 		public function with()
 		{
 			if (!($this->isMethod || $this->isFunction || $this->isClosure)) {
-				throw new Exception(sprintf(
-					'Cannot assert with() on non-callable %s',
+				throw new InvalidTestException(sprintf(
+					'Cannot assert or reject `with()` on non-callable %s',
 					$this->formatValue($this->value)
 				));
 			}
@@ -822,14 +828,14 @@
 				}
 
 				if ($this->isMethod) {
-					throw new Exception(sprintf(
-						'Cannot assert non-static method "%s" without using() an object',
+					throw new InvalidTestException(sprintf(
+						'Cannot assert or reject instance method "%s" without `using()` an object',
 						$this->method
 					));
 
 				} else {
-					throw new Exception(sprintf(
-						'Cannot assert non-static property "%s" without using() an object',
+					throw new InvalidTestException(sprintf(
+						'Cannot assert or reject instance property "%s" without `using()` an object',
 						$this->property
 					));
 				}
@@ -941,7 +947,7 @@
 		{
 			$formatted_array = '[\'' . join($value, '\', \'') . '\']';
 
-			if (strlen($formatted_array) > 16) {
+			if (strlen($formatted_array) > 20) {
 				return '[array](' . count($value) . ')';
 			}
 
@@ -1067,9 +1073,10 @@
 						return $reflection->invokeArgs($object, $args);
 					};
 				}
+
 			} catch (\ReflectionException $e) {
-				throw new Exception(sprintf(
-					'Cannot assert undefined method "%s" on class "%s"',
+				throw new InvalidTestException(sprintf(
+					'Cannot assert or reject undefined method "%s" on class "%s"',
 					$this->method,
 					$this->class
 				));
@@ -1111,8 +1118,8 @@
 				}
 
 			} catch (\ReflectionException $e) {
-				throw new Exception(sprintf(
-					'Cannot assert undefined property "%s" on class "%s"',
+				throw new InvalidTestException(sprintf(
+					'Cannot assert or reject undefined property "%s" on class "%s"',
 					$this->property,
 					$this->class
 				));

@@ -86,19 +86,19 @@
 
 			'Negated Assertions' => function($data) {
 
-				assert(function(){ assert(1+1)->equals(3);            })->throws('Exception');
-				assert(function(){ assert(NULL)->equals(FALSE, TRUE); })->throws('Exception');
+				assert(function(){ assert(1+1)->equals(3);            })->throws('Dotink\Lab\FailedTestException');
+				assert(function(){ assert(NULL)->equals(FALSE, TRUE); })->throws('Dotink\Lab\FailedTestException');
 
-				assert(function(){ assert('12345')->measures(6);      })->throws('Exception');
-				assert(function(){ assert('12345')->measures(GT, 5);  })->throws('Exception');
-				assert(function(){ assert('12345')->measures(LT, 5);  })->throws('Exception');
+				assert(function(){ assert('12345')->measures(6);      })->throws('Dotink\Lab\FailedTestException');
+				assert(function(){ assert('12345')->measures(GT, 5);  })->throws('Dotink\Lab\FailedTestException');
+				assert(function(){ assert('12345')->measures(LT, 5);  })->throws('Dotink\Lab\FailedTestException');
 
-				assert(function(){ assert('abcd')->measures(GTE, 5);  })->throws('Exception');
-				assert(function(){ assert('abcd')->measures(LTE, 3);  })->throws('Exception');
+				assert(function(){ assert('abcd')->measures(GTE, 5);  })->throws('Dotink\Lab\FailedTestException');
+				assert(function(){ assert('abcd')->measures(LTE, 3);  })->throws('Dotink\Lab\FailedTestException');
 
-				assert(function(){ assert(TRUE)->is(EXACTLY, '1');    })->throws('Exception');
-				assert(function(){ assert(2+2)->is(5);                })->throws('Exception');
-				assert(function(){ assert(6)->is(GT, '10');           })->throws('Exception');
+				assert(function(){ assert(TRUE)->is(EXACTLY, '1');    })->throws('Dotink\Lab\FailedTestException');
+				assert(function(){ assert(2+2)->is(5);                })->throws('Dotink\Lab\FailedTestException');
+				assert(function(){ assert(6)->is(GT, '10');           })->throws('Dotink\Lab\FailedTestException');
 			},
 
 			//
@@ -165,27 +165,27 @@
 
 				assert(function(){
 					assert('This is a test string')->contains('foo');
-				})->throws('Exception');
+				})->throws('Dotink\Lab\FailedTestException');
 
 				assert(function(){
 					assert('This is a test string')->contains('foo');
-				})->throws('Exception');
+				})->throws('Dotink\Lab\FailedTestException');
 
 				assert(function(){
 					assert('This is a test string')->contains('foo', FALSE);
-				})->throws('Exception');
+				})->throws('Dotink\Lab\FailedTestException');
 
 				assert(['a' => 'foo', 'b' => 'bar'])->contains('foo');
 
 				assert(function(){
 					assert(['a' => 'foo', 'b' => 'bar'])->contains('foobar');
-				})->throws('Exception');
+				})->throws('Dotink\Lab\FailedTestException');
 
 				assert(['a' => 'foo', 'b' => 'bar'])->has('b');
 
 				assert(function(){
 					assert(['a' => 'foo', 'b' => 'bar'])->has('c');
-				})->throws('Exception');
+				})->throws('Dotink\Lab\FailedTestException');
 			},
 
 			//
@@ -199,11 +199,11 @@
 
 				assert(function(){
 					assert('I have a merry band of brothers')->begins('You have');
-				})->throws('Exception');
+				})->throws('Dotink\Lab\FailedTestException');
 
 				assert(function(){
 					assert('I have a merry band of brothers')->ends('group of brothers');
-				})->throws('Exception');
+				})->throws('Dotink\Lab\FailedTestException');
 			}
 
 		]

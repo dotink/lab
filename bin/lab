@@ -222,9 +222,7 @@
 	function get_detail(Exception $e)
 	{
 		$trace  = $e->getTrace();
-		$depth  = get_class($e) == 'InvalidArgumentException'
-			? 5
-			: 0;
+		$depth  = count($trace) - 5;
 
 		return [
 			'Context' => isset($trace[$depth]['class'])
@@ -312,6 +310,8 @@
 		try {
 			needs(__DIR__ . '/../src/Assertion.php');
 			needs(__DIR__ . '/../src/Rejection.php');
+			needs(__DIR__ . '/../src/Exceptions/FailedTestException.php');
+			needs(__DIR__ . '/../src/Exceptions/InvalidTestException.php');
 
 		        $autoloaders = [
 		                __DIR__ . '/../../../autoload.php',
@@ -459,13 +459,18 @@
 
 					try {
 						call_user_func($test, $data, $shared);
-						echo '[' . _('    PASS    ', 'green') . '] - ' . $message . LB;
+						echo '[ ' . _('    PASS    ', 'green') . ' ] - ' . $message . LB;
 
 					} catch (Exception $e) {
-						if (get_class($e) == 'InvalidArgumentException') {
-							echo '[' . _('INVALID TEST', 'yellow') . '] - ' . $message . LB;
+						if (get_class($e) == __NAMESPACE__ . '\InvalidTestException') {
+							echo '[ ' . _('INVALID TEST', 'yellow') . ' ] - ' . $message . LB;
+						} elseif (get_class($e) == __NAMESPACE__ . '\FailedTestException') {
+							echo '[ ' . _('    FAIL    ', 'red') . ' ] - ' . $message . LB;
 						} else {
-							echo '[' . _('    FAIL    ', 'red') . '] - ' . $message . LB;
+							echo '[ ' . _('    FAIL    ', 'red') . ' ] - ' . $message . LB;
+							echo TAB . LB;
+							echo TAB . 'Unexpected Exception [try `throws()`]:' . LB;
+
 						}
 
 						echo TAB . LB;

@@ -238,7 +238,6 @@
 				echo PHP_EOL;
 			}
 
-
 			xdebug_stop_code_coverage();
 		}
 

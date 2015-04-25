@@ -25,6 +25,8 @@
 	const LTE     = '<=';
 	const EXACTLY = '===';
 
+	const IN      = 'in';
+
 	const NOT     = '!=';
 
 

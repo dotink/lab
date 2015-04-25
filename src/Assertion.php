@@ -215,6 +215,9 @@
 				case GTE:     return $subject >=  $comparison;
 				case LTE:     return $subject <=  $comparison;
 				case EXACTLY: return $subject === $comparison;
+
+				case IN:      return in_array($subject, $comparison);
+
 				default:      return $subject ==  $comparison;
 			}
 		}

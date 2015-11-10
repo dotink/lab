@@ -103,7 +103,7 @@
 		 */
 		public function ignoreFile($file)
 		{
-			$this->ignoredFiles[] = realpath($file);
+			$this->ignoredFiles[] = realpath($file) ?: $file;
 		}
 
 
@@ -156,9 +156,11 @@
 		 */
 		public function processCoverageData($file)
 		{
-			if (in_array($file, $this->ignoredFiles)) {
-				unset($this->coverageData[$file]);
-				return;
+			foreach ($this->ignoredFiles as $ignored_file) {
+				if (strpos($file, $ignored_file) === 0) {
+					unset($this->coverageData[$file]);
+					return;
+				}
 			}
 
 			$this->preserving = in_array($file, $this->preservedFiles);
@@ -228,7 +230,7 @@
 				foreach (array_keys($this->coverageData) as $file) {
 					echo PHP_EOL . sprintf(
 						"\t" . '%s [ %s | %s ] (%s)',
-						str_pad($this->report->checkFileCoverage($file) . '%', 7),
+						str_pad($this->report->checkFileCoverage($file), 7),
 						str_pad($this->report->checkFileCoverage($file, 'covered'), 5),
 						str_pad($this->report->checkFileCoverage($file, 'uncovered'), 5),
 						$this->report->cleanFile($file)

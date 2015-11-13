@@ -125,6 +125,12 @@
 
 			$this->generateMethodCoverage($data);
 			$this->generateFunctionCoverage($data);
+
+
+			//
+			// TODO: Figure out what's not covered and put it somewhere
+			//
+
 		}
 
 
@@ -186,7 +192,7 @@
 			extract($coverage_data[$key]);
 
 			if (!$type) {
-				return number_format($covered / ($covered + $uncovered) * 100, 2). '%';
+				return number_format($covered / ($covered + $uncovered) * 100, 2);
 			}
 
 			return $$type;

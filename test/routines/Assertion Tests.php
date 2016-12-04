@@ -51,22 +51,22 @@
 
 			'Simple Assertions' => function($data) {
 
-				assert(1+1)->equals(2);
-				assert(NULL)->equals(FALSE);
+				accept(1+1)->equals(2);
+				accept(NULL)->equals(FALSE);
 
-				assert('12345')->measures(5);
-				assert('12345')->measures(GT, 4);
-				assert('12345')->measures(LT, 6);
+				accept('12345')->measures(5);
+				accept('12345')->measures(GT, 4);
+				accept('12345')->measures(LT, 6);
 
-				assert('abcd')->measures(GTE, 3);
-				assert('abcd')->measures(LTE, 5);
+				accept('abcd')->measures(GTE, 3);
+				accept('abcd')->measures(LTE, 5);
 
-				assert(5)->is(GT, 4);
-				assert(4)->is(4);
-				assert(6)->is(LTE, 6);
-				assert(7)->is(EXACTLY, 7);
-				assert(NULL)->is(FALSE);
-				assert(TRUE)->is('non-empty string');
+				accept(5)->is(GT, 4);
+				accept(4)->is(4);
+				accept(6)->is(LTE, 6);
+				accept(7)->is(EXACTLY, 7);
+				accept(NULL)->is(FALSE);
+				accept(TRUE)->is('non-empty string');
 			},
 
 			//
@@ -74,8 +74,8 @@
 			//
 
 			'Assertions on Closures' => function($data) {
-				assert(function(){ return 1; })->equals(1, TRUE);
-				assert(function(){ return 'test'; })->measures(4);
+				accept(function(){ return 1; })->equals(1, TRUE);
+				accept(function(){ return 'test'; })->measures(4);
 			},
 
 
@@ -86,19 +86,19 @@
 
 			'Negated Assertions' => function($data) {
 
-				assert(function(){ assert(1+1)->equals(3);            })->throws('Dotink\Lab\FailedTestException');
-				assert(function(){ assert(NULL)->equals(FALSE, TRUE); })->throws('Dotink\Lab\FailedTestException');
+				accept(function(){ accept(1+1)->equals(3);            })->throws('Dotink\Lab\FailedTestException');
+				accept(function(){ accept(NULL)->equals(FALSE, TRUE); })->throws('Dotink\Lab\FailedTestException');
 
-				assert(function(){ assert('12345')->measures(6);      })->throws('Dotink\Lab\FailedTestException');
-				assert(function(){ assert('12345')->measures(GT, 5);  })->throws('Dotink\Lab\FailedTestException');
-				assert(function(){ assert('12345')->measures(LT, 5);  })->throws('Dotink\Lab\FailedTestException');
+				accept(function(){ accept('12345')->measures(6);      })->throws('Dotink\Lab\FailedTestException');
+				accept(function(){ accept('12345')->measures(GT, 5);  })->throws('Dotink\Lab\FailedTestException');
+				accept(function(){ accept('12345')->measures(LT, 5);  })->throws('Dotink\Lab\FailedTestException');
 
-				assert(function(){ assert('abcd')->measures(GTE, 5);  })->throws('Dotink\Lab\FailedTestException');
-				assert(function(){ assert('abcd')->measures(LTE, 3);  })->throws('Dotink\Lab\FailedTestException');
+				accept(function(){ accept('abcd')->measures(GTE, 5);  })->throws('Dotink\Lab\FailedTestException');
+				accept(function(){ accept('abcd')->measures(LTE, 3);  })->throws('Dotink\Lab\FailedTestException');
 
-				assert(function(){ assert(TRUE)->is(EXACTLY, '1');    })->throws('Dotink\Lab\FailedTestException');
-				assert(function(){ assert(2+2)->is(5);                })->throws('Dotink\Lab\FailedTestException');
-				assert(function(){ assert(6)->is(GT, '10');           })->throws('Dotink\Lab\FailedTestException');
+				accept(function(){ accept(TRUE)->is(EXACTLY, '1');    })->throws('Dotink\Lab\FailedTestException');
+				accept(function(){ accept(2+2)->is(5);                })->throws('Dotink\Lab\FailedTestException');
+				accept(function(){ accept(6)->is(GT, '10');           })->throws('Dotink\Lab\FailedTestException');
 			},
 
 			//
@@ -116,7 +116,7 @@
 				// Checks a private variable
 				//
 
-				assert('Dotink\Lab\Calculator::$seed')
+				accept('Dotink\Lab\Calculator::$seed')
 					-> using($calculator1) -> equals(5)
 					-> using($calculator2) -> equals(10)
 					-> using($calculator3) -> equals(-7)
@@ -126,7 +126,7 @@
 				// Runs a public method
 				//
 
-				assert('Dotink\Lab\Calculator::add')
+				accept('Dotink\Lab\Calculator::add')
 					-> using($calculator1) -> with(5) -> equals(10)
 					-> using($calculator2) -> with(3) -> equals(13)
 					-> using($calculator3) -> with(2) -> equals(-5)
@@ -136,7 +136,7 @@
 				// Access a private method
 				//
 
-				assert('Dotink\Lab\Calculator::equals')
+				accept('Dotink\Lab\Calculator::equals')
 					-> using($calculator1) -> equals(10)
 					-> using($calculator2) -> equals(13)
 					-> using($calculator3) -> equals(-5)
@@ -151,8 +151,8 @@
 			//
 
 			'Dumb Assertions' => function($data) {
-				assert('ltrim', TRUE)->equals('ltrim');
-				assert('Dotink\Lab\Calculator::$seed', TRUE)->measures(28);
+				accept('ltrim', TRUE)->equals('ltrim');
+				accept('Dotink\Lab\Calculator::$seed', TRUE)->measures(28);
 			},
 
 			//
@@ -160,31 +160,31 @@
 			//
 
 			'Contains Assertions' => function($data) {
-				assert('This is a test string')->contains('test');
-				assert('This is a test string')->contains('Test', FALSE);
+				accept('This is a test string')->contains('test');
+				accept('This is a test string')->contains('Test', FALSE);
 
-				assert(function(){
-					assert('This is a test string')->contains('foo');
+				accept(function(){
+					accept('This is a test string')->contains('foo');
 				})->throws('Dotink\Lab\FailedTestException');
 
-				assert(function(){
-					assert('This is a test string')->contains('foo');
+				accept(function(){
+					accept('This is a test string')->contains('foo');
 				})->throws('Dotink\Lab\FailedTestException');
 
-				assert(function(){
-					assert('This is a test string')->contains('foo', FALSE);
+				accept(function(){
+					accept('This is a test string')->contains('foo', FALSE);
 				})->throws('Dotink\Lab\FailedTestException');
 
-				assert(['a' => 'foo', 'b' => 'bar'])->contains('foo');
+				accept(['a' => 'foo', 'b' => 'bar'])->contains('foo');
 
-				assert(function(){
-					assert(['a' => 'foo', 'b' => 'bar'])->contains('foobar');
+				accept(function(){
+					accept(['a' => 'foo', 'b' => 'bar'])->contains('foobar');
 				})->throws('Dotink\Lab\FailedTestException');
 
-				assert(['a' => 'foo', 'b' => 'bar'])->has('b');
+				accept(['a' => 'foo', 'b' => 'bar'])->has('b');
 
-				assert(function(){
-					assert(['a' => 'foo', 'b' => 'bar'])->has('c');
+				accept(function(){
+					accept(['a' => 'foo', 'b' => 'bar'])->has('c');
 				})->throws('Dotink\Lab\FailedTestException');
 			},
 
@@ -193,16 +193,16 @@
 			//
 
 			'Ends and Begins Assertions' => function($data) {
-				assert('I have a merry band of brothers')
+				accept('I have a merry band of brothers')
 					-> begins ('I have a')
 					-> ends   ('band of brothers');
 
-				assert(function(){
-					assert('I have a merry band of brothers')->begins('You have');
+				accept(function(){
+					accept('I have a merry band of brothers')->begins('You have');
 				})->throws('Dotink\Lab\FailedTestException');
 
-				assert(function(){
-					assert('I have a merry band of brothers')->ends('group of brothers');
+				accept(function(){
+					accept('I have a merry band of brothers')->ends('group of brothers');
 				})->throws('Dotink\Lab\FailedTestException');
 			}
 

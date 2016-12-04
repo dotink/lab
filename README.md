@@ -72,7 +72,7 @@ create a new instance of the build in `Assertion` class.
 			// Our first test
 
 			'First Test' => function($data){
-				assert(2 + 2)->equals(5);
+				accept(2 + 2)->equals(5);
 			},
 		]
 	];
@@ -93,20 +93,20 @@ class method, a property, or a function.  The following two lines of code are, f
 equivalent:
 
 ```php
-assert(ltrim('test', 't'))->equals('est', TRUE);
+accept(ltrim('test', 't'))->equals('est', TRUE);
 
-assert('ltrim')->with('test', 't')->equals('est');
+accept('ltrim')->with('test', 't')->equals('est');
 ```
 
 ##### Multiple Assertions
 
 Although each of the above will do the exact same comparison to assert equal values, the second
-benefits in two ways.  Firstly, by providing a function, method, or property name to `assert()`
+benefits in two ways.  Firstly, by providing a function, method, or property name to `accept()`
 directly, it is  possible to run multiple assertions over a single method without repeating the
 actual method name:
 
 ```php
-assert('ltrim')
+accept('ltrim')
 	-> with   ('test', 't')
 	-> equals ('est')
 
@@ -145,7 +145,7 @@ Using the class above we can easily do the following assertions despite that the
 not publicly visible:
 
 ```php
-assert('Adder::add')
+accept('Adder::add')
 	-> using  (new Adder(3))
 	-> with   (2)
 	-> equals (5)
@@ -159,7 +159,7 @@ assert('Adder::add')
 Similarly, we could check the value of the `seed` property with a slightly different call:
 
 ```php
-assert('Adder::$seed')
+accept('Adder::$seed')
 	-> using  (new Adder(3))
 	-> equals (3)
 

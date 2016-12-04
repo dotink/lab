@@ -433,6 +433,20 @@
 		// Setup
 		//
 
+
+		if (!isset($config['disable_code_coverage']) || !$config['disable_code_coverage']) {
+			$shared->coverageEngine->start($shared->coverageReport);
+		}
+
+		if (!empty($config['disable_autoloading'])) {
+			spl_autoload_register($disable_autoloader = function($class) {
+				throw new Exception(sprintf(
+					'Cannot autoload class %s, autoloading disabled, try needs() or using a mock',
+					$class
+				));
+			}, TRUE, TRUE);
+		}
+
 		try {
 			if (isset($config['setup']) && $config['setup'] instanceof \Closure) {
 				call_user_func($config['setup'], $data, $shared);
@@ -448,22 +462,11 @@
 			exit(-1);
 		}
 
-		if (!isset($config['disable_code_coverage']) || !$config['disable_code_coverage']) {
-			$shared->coverageEngine->start($shared->coverageReport);
-		}
 
 		//
 		// Run Tests
 		//
 
-		if (!empty($config['disable_autoloading'])) {
-			spl_autoload_register($disable_autoloader = function($class) {
-				throw new Exception(sprintf(
-					'Cannot autoload class %s, autoloading disabled, try needs() or using a mock',
-					$class
-				));
-			}, TRUE, TRUE);
-		}
 
 		$failed = FALSE;
 

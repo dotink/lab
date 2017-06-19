@@ -70,14 +70,27 @@
 		private $started = FALSE;
 
 
+		public function __construct($base_directory)
+		{
+			$this->baseDirectory = $base_directory;
+		}
+
+
 		/**
 		 * Create a new coverage engine
 		 *
 		 * @access public
 		 * @return void
 		 */
-		public function __construct()
+		public function baseFile($file)
 		{
+			$file = realpath($file);
+
+			if (strpos($file, $this->baseDirectory) === 0) {
+				return substr($file, strlen($this->baseDirectory) + 1);
+			}
+
+			return $file;
 		}
 
 
@@ -154,54 +167,44 @@
 		/**
 		 *
 		 */
-		public function processCoverageData($file)
+		public function process()
 		{
-			foreach ($this->ignoredFiles as $ignored_file) {
-				if (strpos($file, $ignored_file) === 0) {
+			foreach (array_keys($this->coverageData) as $file) {
+				if (in_array($file, $this->ignoredFiles)) {
 					unset($this->coverageData[$file]);
-					return;
-				}
-			}
-
-			$this->preserving = in_array($file, $this->preservedFiles);
-			$file_reflection  = $this->broker->processFile($file, TRUE);
-			$file_namespaces  = $file_reflection->getNamespaces();
-
-			foreach ($file_namespaces as $namespace) {
-				if ($this->removeByPattern($file, $namespace, $this->ignoredNamespaces)) {
-					break;
+					continue;
 				}
 
-				$this->report->addNamespace($namespace);
+				$this->preserving = in_array($file, $this->preservedFiles);
+				$file_reflection  = $this->broker->processFile($file, TRUE);
+				$file_namespaces  = $file_reflection->getNamespaces();
 
-				foreach ($namespace->getClasses() as $class) {
-					if ($this->removeByPattern($file, $class, $this->ignoredClasses)) {
+				foreach ($file_namespaces as $namespace) {
+					if ($this->ignoreByPattern($file, $namespace, $this->ignoredNamespaces)) {
 						break;
 					}
 
-					$this->report->addClass($class);
-
-					foreach ($class->getMethods() as $method) {
-						if ($this->removeByPattern($file, $method, $this->ignoredMethods)) {
+					foreach ($namespace->getClasses() as $class) {
+						if ($this->ignoreByPattern($file, $class, $this->ignoredClasses)) {
 							break;
 						}
 
-						$this->report->addMethod($method);
-					}
-				}
-
-				foreach ($namespace->getFunctions() as $function) {
-					if ($this->removeByPattern($file, $function, $this->ignoredFunctions)) {
-						break;
+						foreach ($class->getMethods() as $method) {
+							if ($this->ignoreByPattern($file, $method, $this->ignoredMethods)) {
+								break;
+							}
+						}
 					}
 
-					$this->report->addFunction($file, $function);
+					foreach ($namespace->getFunctions() as $function) {
+						if ($this->ignoreByPattern($file, $function, $this->ignoredFunctions)) {
+							break;
+						}
+					}
 				}
 			}
 
-			if (!count($this->coverageData[$file])) {
-				unset($this->coverageData[$file]);
-			}
+			return $this->coverageData;
 		}
 
 
@@ -214,40 +217,44 @@
 				return;
 			}
 
+			xdebug_stop_code_coverage(FALSE);
+
+			$output             = NULL;
+			$this->backend      = new Broker\Backend\Memory();
+			$this->broker       = new Broker($this->backend);
 			$this->coverageData = xdebug_get_code_coverage();
-			$this->broker       = new Broker(new Broker\Backend\Memory());
 
-			foreach (array_keys($this->coverageData) as $file) {
-				$this->processCoverageData($file);
-			}
+			$this->report->generate(
+				$this->process(),
+				$this->broker
+			);
 
-			$this->report->generate($this->coverageData);
-
-			if ($this->coverageData) {
-
-				echo PHP_EOL . "\t\033[37mCode Coverage\033[0m" . PHP_EOL;
-
-				foreach (array_keys($this->coverageData) as $file) {
-					echo PHP_EOL . sprintf(
-						"\t" . '%s [ %s | %s ] (%s)',
-						str_pad($this->report->checkFileCoverage($file), 7),
-						str_pad($this->report->checkFileCoverage($file, 'covered'), 5),
-						str_pad($this->report->checkFileCoverage($file, 'uncovered'), 5),
-						$this->report->cleanFile($file)
-					);
+			foreach (array_keys($this->report->getFiles()) as $file) {
+				if (!$this->report->checkFileCoverage($file, 'tested')) {
+					continue;
 				}
 
-				echo PHP_EOL;
+				$output .= PHP_EOL . sprintf(
+					"\t" . '%s [ %s | %s ] (%s)',
+					str_pad($this->report->checkFileCoverage($file) . '%', 7),
+					str_pad($this->report->checkFileCoverage($file, 'covered'), 5),
+					str_pad($this->report->checkFileCoverage($file, 'uncovered'), 5),
+					$this->baseFile($file)
+				);
 			}
 
-			xdebug_stop_code_coverage();
+			if ($output) {
+				echo PHP_EOL . "\t\033[37mCode Coverage\033[0m" . PHP_EOL;
+				echo $output;
+				echo PHP_EOL;
+			}
 		}
 
 
 		/**
 		 *
 		 */
-		private function remove($file, $start, $end)
+		private function ignore($file, $start, $end)
 		{
 			if ($end === NULL) {
 				end($this->coverageData[$file]);
@@ -256,7 +263,7 @@
 			}
 
 			for ($x = $start; $x <= $end; $x++) {
-				unset($this->coverageData[$file][$x]);
+				$this->coverageData[$file][$x] = -3;
 			}
 		}
 
@@ -264,7 +271,7 @@
 		/**
 		 *
 		 */
-		private function removeByPattern($file, $reflection, $ignore_list)
+		private function ignoreByPattern($file, $reflection, $ignore_list)
 		{
 			if (!$this->preserving) {
 				foreach ($ignore_list as $pattern) {
@@ -274,7 +281,7 @@
 						continue;
 					}
 
-					$this->remove($file, $reflection->getStartLine(), $reflection->getEndLine());
+					$this->ignore($file, $reflection->getStartLine(), $reflection->getEndLine());
 					return TRUE;
 				}
 			}

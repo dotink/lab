@@ -5,6 +5,42 @@
 		/**
 		 *
 		 */
+		private $classes = array();
+
+
+		/**
+		 *
+		 */
+		private $classCoverage = array();
+
+
+		/**
+		 *
+		 */
+		private $fileCoverage = array();
+
+
+		/**
+		 *
+		 */
+		private $files = array();
+
+
+		/**
+		 *
+		 */
+		private $functionCoverage = array();
+
+
+		/**
+		 *
+		 */
+		private $functions = array();
+
+
+		/**
+		 *
+		 */
 		private $methods = array();
 
 
@@ -17,62 +53,21 @@
 		/**
 		 *
 		 */
-		private $files = array();
+		private $namespaces = array();
 
 
 		/**
 		 *
 		 */
-		private $fileCoverage = array();
+		private $namespaceCoverage = array();
 
 
 		/**
 		 *
 		 */
-		public function __construct($base_directory)
+		public function checkClassCoverage($class, $type = NULL)
 		{
-			$this->baseDirectory = realpath($base_directory);
-		}
-
-
-		/**
-		 *
-		 */
-		public function addClass($class)
-		{
-
-		}
-
-
-		/**
-		 *
-		 */
-		public function addFunction($function)
-		{
-
-		}
-
-
-		/**
-		 *
-		 */
-		public function addMethod($method)
-		{
-			$this->methods[] = $method;
-			$this->methodCoverage[$method->getPrettyName()] = [
-				'dead'      => 0,
-				'covered'   => 0,
-				'uncovered' => 0
-			];
-		}
-
-
-		/**
-		 *
-		 */
-		public function addNamespace($namespace)
-		{
-
+			return $this->checkCoverage($this->fileCoverage, $file, $type);
 		}
 
 
@@ -88,6 +83,15 @@
 		/**
 		 *
 		 */
+		public function checkFunctionCoverage($function, $type = NULL)
+		{
+			return $this->checkCoverage($this->functionCoverage, $function, $type);
+		}
+
+
+		/**
+		 *
+		 */
 		public function checkMethodCoverage($method, $type = NULL)
 		{
 			return $this->checkCoverage($this->methodCoverage, $method, $type);
@@ -97,73 +101,37 @@
 		/**
 		 *
 		 */
-		public function cleanFile($file)
+		public function checkNamespaceCoverage($namespace, $type = NULL)
 		{
-			$file = realpath($file);
-
-			if (strpos($file, $this->baseDirectory) === 0) {
-				return substr($file, strlen($this->baseDirectory) + 1);
-			}
-
-			return $file;
+			return $this->checkCoverage($this->namespaceCoverage, $method, $type);
 		}
 
 
 		/**
 		 *
 		 */
-		public function generate($data)
+		public function generate($data, $broker)
 		{
 			foreach (array_keys($data) as $file) {
-				$this->source[$file]       = file($file);
+				$values                    = array_count_values($data[$file]);
+				$this->files[$file]        = $broker->processFile($file, TRUE);
 				$this->fileCoverage[$file] = [
-					'dead'      => 0,
-					'covered'   => 0,
-					'uncovered' => 0
+					'dead'      => isset($values[-2]) ? $values[-2] : 0,
+					'ignored'   => isset($values[-3]) ? $values[-3] : 0,
+					'uncovered' => isset($values[-1]) ? $values[-1] : 0,
+					'covered'   => isset($values[1])  ? $values[1]  : 0
 				];
 			}
 
-			$this->generateMethodCoverage($data);
-			$this->generateFunctionCoverage($data);
+			foreach ($this->files as $file) {
+				foreach ($file->getNamespaces() as $namespace) {
 
+					$this->generateFunctionCoverage($namespace, $data[$file->getName()]);
 
-			//
-			// TODO: Figure out what's not covered and put it somewhere
-			//
+					foreach ($namespace->getClasses() as $class) {
+						$this->classes[$class->getPrettyName()] = $class;
 
-		}
-
-
-		/**
-		 *
-		 */
-		public function generateMethodCoverage($data)
-		{
-			foreach ($this->methods as $method) {
-				if (!$data[$file = $method->getFileName()]) {
-					continue;
-				}
-
-				for ($x = $method->getStartLine(); $x <= $method->getEndLine(); $x++) {
-					if (!isset($data[$file][$x])) {
-						continue;
-					}
-
-					switch ($data[$file][$x]) {
-						case 1:
-							$this->fileCoverage[$file]['covered']++;
-							$this->methodCoverage[$method->getPrettyName()]['covered']++;
-							break;
-
-						case -1:
-							$this->fileCoverage[$file]['uncovered']++;
-							$this->methodCoverage[$method->getPrettyName()]['uncovered']++;
-							break;
-
-						case -2:
-							$this->fileCoverage[$file]['dead']++;
-							$this->methodCoverage[$method->getPrettyName()]['dead']++;
-							break;
+						$this->generateMethodCoverage($namespace, $class, $data[$file->getName()]);
 					}
 				}
 			}
@@ -173,10 +141,45 @@
 		/**
 		 *
 		 */
-		public function generateFunctionCoverage($data)
+		public function getClasses()
 		{
-			foreach ($this->functions as $function) {
-			}
+			return $this->classes;
+		}
+
+
+		/**
+		 *
+		 */
+		public function getFiles()
+		{
+			return $this->files;
+		}
+
+
+		/**
+		 *
+		 */
+		public function getFunctions()
+		{
+			return $this->functions;
+		}
+
+
+		/**
+		 *
+		 */
+		public function getMethods()
+		{
+			return $this->methods;
+		}
+
+
+		/**
+		 *
+		 */
+		public function getNamespaces()
+		{
+			return $this->namespaces;
 		}
 
 
@@ -192,10 +195,111 @@
 			extract($coverage_data[$key]);
 
 			if (!$type) {
-				return number_format($covered / ($covered + $uncovered) * 100, 2);
+				return number_format($covered / ($covered + $uncovered) * 100, 2). '%';
 			}
 
-			return $$type;
+			switch ($type) {
+				case 'tested':
+					return $covered + $uncovered;
+
+				case 'dead':
+				case 'ignored':
+				case 'covered':
+				case 'uncovered':
+					return $$type;
+
+				default:
+					return 'N/A';
+			}
+		}
+
+
+		/**
+		 *
+		 */
+		private function generateMethodCoverage($namespace, $class, $data)
+		{
+			$this->classes[$class_name = $class->getPrettyName()]            = $class;
+			$this->namespaces[$namespace_name = $namespace->getPrettyName()] = $namespace;
+
+			foreach ($class->getMethods() as $method) {
+
+				$this->$methods[$method_name = $method->getPrettyName()] = $method;
+
+				for ($x = $method->getStartLine(); $x <= $method->getEndLine(); $x++) {
+					if (!isset($data[$x])) {
+						continue;
+					}
+
+					switch ($data[$x]) {
+						case 1:
+							$this->classCoverage[$class_name]['covered']++;
+							$this->methodCoverage[$method_name]['covered']++;
+							$this->namespaceCoverage[$namespace_name]['covered']++;
+							break;
+
+						case -1:
+							$this->classCoverage[$class_name]['uncovered']++;
+							$this->methodCoverage[$method_name]['uncovered']++;
+							$this->namespaceCoverage[$namespace_name]['uncovered']++;
+							break;
+
+						case -2:
+							$this->classCoverage[$class_name]['dead']++;
+							$this->methodCoverage[$method_name]['dead']++;
+							$this->namespaceCoverage[$namespace_name]['dead']++;
+							break;
+
+						case -3:
+							$this->classCoverage[$class_name]['ignored']++;
+							$this->methodCoverage[$method_name]['ignored']++;
+							$this->namespaceCoverage[$namespace_name]['ignored']++;
+							break;
+					}
+				}
+			}
+		}
+
+
+		/**
+		 *
+		 */
+		private function generateFunctionCoverage($namespace, $data)
+		{
+			$this->namespaces[$namespace_name = $namespace->getPrettyName()] = $namespace;
+
+			foreach ($namespace->getFunctions() as $function) {
+
+				$this->$functions[$function_name = $function->getPrettyName()] = $function;
+
+				for ($x = $function->getStartLine(); $x <= $function->getEndLine(); $x++) {
+					if (!isset($data[$x])) {
+						continue;
+					}
+
+					switch ($data[$x]) {
+						case 1:
+							$this->namespaceCoverage[$namespace_name]['covered']++;
+							$this->functionCoverage[$function_name]['covered']++;
+							break;
+
+						case -1:
+							$this->namespaceCoverage[$namespace_name]['uncovered']++;
+							$this->functionCoverage[$function_name]['uncovered']++;
+							break;
+
+						case -2:
+							$this->namespaceCoverage[$namespace_name]['dead']++;
+							$this->functionCoverage[$function_name]['dead']++;
+							break;
+
+						case -3:
+							$this->namespaceCoverage[$namespace_name]['ignored']++;
+							$this->functionCoverage[$function_name]['ignored']++;
+							break;
+					}
+				}
+			}
 		}
 	}
 }

@@ -1,6 +1,13 @@
-<?php namespace Dotink\Lab
-{
-	use Exception;
+<?php
 
-	class InvalidTestException extends Exception {}
+namespace Lab;
+
+use Exception;
+
+/**
+ *
+ */
+class InvalidTestException extends Exception
+{
+
 }

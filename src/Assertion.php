@@ -1,4 +1,4 @@
-<?php namespace Dotink\Lab
+<?php namespace Lab
 {
 	use Exception;
 	use Closure;
@@ -949,10 +949,6 @@
 		private function formatArray(array $value)
 		{
 			$formatted_array = '[\'' . join($value, '\', \'') . '\']';
-
-			if (strlen($formatted_array) > 20) {
-				return '[array](' . count($value) . ')';
-			}
 
 			return $formatted_array;
 		}

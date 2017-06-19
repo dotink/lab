@@ -1,6 +1,13 @@
-<?php namespace Dotink\Lab
-{
-	use Exception;
+<?php
 
-	class FailedTestException extends Exception {}
+namespace Lab;
+
+use Exception;
+
+/**
+ * An exception that is thrown when a test fails.
+ */
+class FailedTestException extends Exception
+{
+
 }
